@@ -1,0 +1,19 @@
+{
+  "name": "pulse-viz-extension",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "proxy": "node server/proxy.cjs",
+    "start": "npm run proxy"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  }
+}

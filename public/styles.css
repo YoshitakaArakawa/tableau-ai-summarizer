@@ -1,0 +1,108 @@
+:root {
+  color-scheme: light dark;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  --primary: #2b579a;
+  --background: #f8f9fb;
+  --border: #d0d7de;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+}
+
+.container {
+  margin: 0 auto;
+  padding: 24px;
+  max-width: 960px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+header h1 {
+  margin: 0;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.controls label {
+  display: flex;
+  flex-direction: column;
+  font-weight: 600;
+  gap: 4px;
+}
+
+.controls textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.controls input,
+.controls select,
+.controls textarea {
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.control-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.checkbox {
+  flex-direction: row;
+  align-items: center;
+  font-weight: 500;
+}
+
+.checkbox input {
+  margin-right: 8px;
+}
+
+button#refreshInsights {
+  align-self: flex-start;
+  padding: 10px 18px;
+  border-radius: 4px;
+  border: none;
+  background: var(--primary);
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+button#refreshInsights:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+#status {
+  font-size: 13px;
+  color: #444;
+}
+
+.output {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  padding: 16px;
+}
+
+.insight-output {
+  margin: 0;
+  white-space: pre-wrap;
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 13px;
+}
