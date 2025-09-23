@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pulse Extension Configuration</title>
+    <style>
+      :root {
+        font-family: "Segoe UI", system-ui, sans-serif;
+        color-scheme: light dark;
+        --primary: #2b579a;
+        --border: #d0d7de;
+      }
+
+      body {
+        margin: 0;
+        background: #f8f9fb;
+      }
+
+      main {
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 20px;
+      }
+
+      .subhead {
+        margin: 4px 0 0;
+        color: #4b4b4b;
+        font-size: 13px;
+      }
+
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      label {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-weight: 600;
+      }
+
+      textarea,
+      select {
+        padding: 8px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        font-size: 14px;
+      }
+
+      .checkbox-row {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+
+      .checkbox-row label {
+        flex-direction: row;
+        align-items: center;
+        font-weight: 500;
+      }
+
+      .checkbox-row input {
+        margin-right: 8px;
+      }
+
+      .actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+      }
+
+      button {
+        padding: 8px 16px;
+        border-radius: 4px;
+        border: 1px solid var(--primary);
+        font-size: 14px;
+        cursor: pointer;
+      }
+
+      #saveConfig {
+        background: var(--primary);
+        color: #fff;
+      }
+
+      #cancelConfig {
+        background: #fff;
+        color: var(--primary);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Pulse Extension Settings</h1>
+        <p class="subhead">Adjust prompt and insight generation preferences.</p>
+      </header>
+      <form id="configForm">
+        <label>
+          Author prompt
+          <textarea id="userPrompt" placeholder="Add additional instructions for the summary..."></textarea>
+        </label>
+        <label>
+          Comparison span
+          <select id="comparisonSpan">
+            <option value="">Unspecified</option>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="rolling_N_days">Rolling N days</option>
+          </select>
+        </label>
+        <label>
+          Improvement direction
+          <select id="improvementDirection">
+            <option value="neutral">Neutral</option>
+            <option value="desired_increase">Higher is better</option>
+            <option value="desired_decrease">Lower is better</option>
+          </select>
+        </label>
+        <div class="checkbox-row">
+          <label><input id="dimensionBreakdown" type="checkbox" /> Require dimension factor analysis</label>
+          <label><input id="trendDetection" type="checkbox" /> Require trend change detection</label>
+        </div>
+        <div class="actions">
+          <button id="cancelConfig" type="button">Cancel</button>
+          <button id="saveConfig" type="submit">Save</button>
+        </div>
+      </form>
+    </main>
+    <script src="https://tableau.github.io/extensions-api/lib/tableau.extensions.1.latest.min.js"></script>
+    <script type="module" src="../dist/config/dialog.js"></script>
+  </body>
+</html>
+
