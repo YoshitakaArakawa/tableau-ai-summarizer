@@ -18,6 +18,16 @@ body {
   margin: 0 auto;
 }
 
+.status-banner {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  background-color: #eef3fb;
+  color: #1f3b63;
+  font-size: 0.9rem;
+  border: 1px solid #c0d6f5;
+}
+
 .field-label {
   font-weight: 600;
 }

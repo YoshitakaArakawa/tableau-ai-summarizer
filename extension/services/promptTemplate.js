@@ -6,7 +6,7 @@ let promptTemplate = null;
 let promptTemplatePromise = null;
 
 function substitutePlaceholder(template, key, value) {
-  const pattern = new RegExp({{}}, 'g');
+  const pattern = new RegExp('\\{\\{' + key + '\\}\\}', 'g');
   return template.replace(pattern, value);
 }
 
