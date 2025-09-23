@@ -37,7 +37,7 @@ A Tableau worksheet extension that captures summary data, sends it to the OpenAI
 
 4. **Install the extension in Tableau Desktop**
    - Open Tableau Desktop and connect to your data source.
-   - Add the extension using `tableau_ai_summarizer.trex` or a customized copy of `sample.trex_template` with the correct host/port.
+   - Add the extension using a customized copy of sample.trex_template with the correct host/port (don’t forget to set the extension to .trex).
 
 5. **Generate a summary**
    - Drop a measure on the 'Measure' encoding and a date field on the 'Date' encoding.
