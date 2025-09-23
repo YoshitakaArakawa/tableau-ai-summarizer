@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Tableau Extension Manifest Template
+  Replace the placeholder values (YOUR_...) before packaging.
+  Reference: https://help.tableau.com/current/api/extension_api/en-us/Extensions/trex_file.htm
+-->
+<manifest manifest-version="0.1" xmlns="http://www.tableau.com/xml/extension_manifest">
+  <worksheet-extension id="YOUR_EXTENSION_ID" extension-version="0.1.0">
+    <default-locale>en_US</default-locale>
+    <name resource-id="name" />
+    <description resource-id="description" />
+    <author name="YOUR_NAME" email="you@example.com" organization="YOUR_ORG" website="https://www.example.com" />
+    <min-api-version>1.1</min-api-version>
+    <source-location>
+      <!-- Use https:// for production deployments -->
+      <url>http://localhost:8787/index.html</url>
+    </source-location>
+    <icon />
+    <context-menu>
+      <configure-context-menu-item />
+    </context-menu>
+    <encoding id="measure">
+      <display-name>Measure</display-name>
+      <data-spec>
+        <data-type>numeric</data-type>
+      </data-spec>
+      <role-spec>
+        <role-type>continuous-measure</role-type>
+      </role-spec>
+      <fields max-count="1" />
+    </encoding>
+    <encoding id="time">
+      <display-name>Date</display-name>
+      <data-spec>
+        <data-type>temporal</data-type>
+      </data-spec>
+      <role-spec>
+        <role-type>continuous-dimension</role-type>
+      </role-spec>
+      <fields max-count="1" />
+    </encoding>
+  </worksheet-extension>
+  <resources>
+    <resource id="name">
+      <text locale="en_US">YOUR EXTENSION NAME</text>
+    </resource>
+    <resource id="description">
+      <text locale="en_US">Short description shown inside Tableau.</text>
+    </resource>
+  </resources>
+</manifest>
