@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Extension Configuration</title>
+  <link rel="stylesheet" href="dialog.css" />
+</head>
+<body>
+  <main class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
+    <h1 id="dialogTitle">Summary Options</h1>
+    <p id="dialogDescription" class="dialog-description">Adjust how the generated summary should interpret the selected fields.</p>
+
+    <form id="configForm" class="form" novalidate>
+      <section class="form-section">
+        <label class="form-label" for="periodSelect">Reporting period</label>
+        <select id="periodSelect" class="form-select">
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+        </select>
+        <p class="form-hint">Defines the cadence used when describing the time series.</p>
+      </section>
+
+      <section class="form-section">
+        <label class="checkbox-label">
+          <input id="additiveCheckbox" type="checkbox" />
+          Treat the measure as additive across periods
+        </label>
+        <p class="form-hint">Disable for metrics such as unique users or ratios.</p>
+      </section>
+
+      <section class="form-section">
+        <label class="form-label" for="trendSelect">When the measure increases</label>
+        <select id="trendSelect" class="form-select">
+          <option value="positive">It is good</option>
+          <option value="negative">It is bad</option>
+          <option value="neutral">It is neutral</option>
+        </select>
+        <p class="form-hint">Controls the tone of the generated narrative.</p>
+      </section>
+    </form>
+
+    <div class="dialog-actions">
+      <button id="cancelDialog" type="button" class="button">Cancel</button>
+      <button id="saveDialog" type="button" class="button button-primary">Save</button>
+    </div>
+  </main>
+  <script src="tableau.extensions.1.latest.min.js"></script>
+  <script src="config.js"></script>
+</body>
+</html>

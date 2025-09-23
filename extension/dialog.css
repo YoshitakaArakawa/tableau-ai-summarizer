@@ -1,0 +1,91 @@
+body {
+  margin: 0;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background-color: #ffffff;
+  color: #1f1f1f;
+}
+
+.dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.75rem;
+  max-width: 420px;
+}
+
+.dialog-description {
+  margin: 0;
+  color: #555555;
+  font-size: 0.95rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-label {
+  font-weight: 600;
+}
+
+.form-select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #c9c9c9;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  background-color: #ffffff;
+}
+
+.checkbox-label {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  font-weight: 500;
+}
+
+.form-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #6a6a6a;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.button {
+  padding: 0.5rem 1.25rem;
+  font-size: 0.95rem;
+  border-radius: 6px;
+  border: 1px solid #b0b0b0;
+  background-color: #ffffff;
+  cursor: pointer;
+}
+
+.button:hover {
+  background-color: #f2f2f2;
+}
+
+.button:focus {
+  outline: 2px solid #4a8fe7;
+  outline-offset: 2px;
+}
+
+.button-primary {
+  border-color: #4a8fe7;
+  background-color: #4a8fe7;
+  color: #ffffff;
+}
+
+.button-primary:hover {
+  background-color: #3a73c3;
+}
