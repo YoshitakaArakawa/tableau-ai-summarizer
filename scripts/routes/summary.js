@@ -24,7 +24,7 @@ function createSummaryRouter({ logger }) {
     const csvBytes = Buffer.byteLength(csv, 'utf8');
     const previewLimit = 500;
     const truncatedPreview = csv.length > previewLimit;
-    const csvPreview = truncatedPreview ? ${csv.slice(0, previewLimit)}… : csv;
+    const csvPreview = truncatedPreview ? `${csv.slice(0, previewLimit)}...` : csv;
 
     logger.info('Summary request received', {
       reason: reason || 'unspecified',
@@ -56,3 +56,4 @@ function createSummaryRouter({ logger }) {
 }
 
 module.exports = createSummaryRouter;
+

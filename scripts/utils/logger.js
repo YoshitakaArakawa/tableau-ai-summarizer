@@ -14,13 +14,14 @@ function createLogger({ enabled = false, logDirectory, logFilePath }) {
   function write(level, message, detail) {
     const timestamp = new Date().toISOString();
     const record = { timestamp, level, message };
-
     const consoleMethod = level === 'error' ? console.error : console.log;
+    const formattedMessage = `[${timestamp}] [${level.toUpperCase()}] ${message}`;
+
     if (detail !== undefined) {
       record.detail = detail;
-      consoleMethod([] [] , detail);
+      consoleMethod(formattedMessage, detail);
     } else {
-      consoleMethod([] [] );
+      consoleMethod(formattedMessage);
     }
 
     if (logToFile && resolvedFilePath) {
