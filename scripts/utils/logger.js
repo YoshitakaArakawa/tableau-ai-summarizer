@@ -1,0 +1,51 @@
+const fs = require('fs');
+const path = require('path');
+
+function createLogger({ enabled = false, logDirectory, logFilePath }) {
+  const logToFile = Boolean(enabled);
+  const resolvedDirectory = logDirectory ? path.resolve(logDirectory) : null;
+  const resolvedFilePath = logFilePath ? path.resolve(logFilePath) : null;
+
+  if (logToFile && resolvedDirectory && resolvedFilePath) {
+    fs.mkdirSync(resolvedDirectory, { recursive: true });
+    fs.writeFileSync(resolvedFilePath, '', 'utf8');
+  }
+
+  function write(level, message, detail) {
+    const timestamp = new Date().toISOString();
+    const record = { timestamp, level, message };
+
+    const consoleMethod = level === 'error' ? console.error : console.log;
+    if (detail !== undefined) {
+      record.detail = detail;
+      consoleMethod([] [] , detail);
+    } else {
+      consoleMethod([] [] );
+    }
+
+    if (logToFile && resolvedFilePath) {
+      try {
+        fs.appendFileSync(resolvedFilePath, JSON.stringify(record) + '\n', 'utf8');
+      } catch (error) {
+        console.error('[Server][Logger] Failed to write log file', error);
+      }
+    }
+  }
+
+  return {
+    info(message, detail) {
+      write('info', message, detail);
+    },
+    warn(message, detail) {
+      write('warn', message, detail);
+    },
+    error(message, detail) {
+      write('error', message, detail);
+    },
+    debug(message, detail) {
+      write('debug', message, detail);
+    }
+  };
+}
+
+module.exports = { createLogger };
