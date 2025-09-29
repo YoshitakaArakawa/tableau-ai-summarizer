@@ -7,8 +7,8 @@ const PERIOD_GUIDANCE = {
 };
 
 const ADDITIVITY_GUIDANCE = {
-  true: 'The metric is additive; totals, growth rates, and cumulative contributions are valid talking points.',
-  false: 'The metric is non-additive; emphasize averages, ratios, or rates of change rather than summing values.'
+  true: 'Totals and cumulative comparisons remain reliable; leverage them when they clarify the story.',
+  false: 'Totals can mislead; emphasize averages, ratios, or rates of change instead of sums, and avoid naming the classification explicitly.'
 };
 
 const TREND_GUIDANCE = {
@@ -175,8 +175,9 @@ export function buildSettingsReferenceXml(settings, summaryMetadata = {}) {
     );
   });
   lines.push('  </reportSkeleton>');
-  lines.push('  <usageNotes>In every section, explicitly reflect the cadence, metric interpretation, trend guidance, the identified measure/date fields, and the selected language.</usageNotes>');
+  lines.push('  <usageNotes>Use cadence, metric interpretation, trend guidance, and key fields to ground the narrative when relevant without listing them verbatim or naming internal labels.</usageNotes>');
   lines.push('</extensionSettings>');
 
   return lines.join('');
 }
+

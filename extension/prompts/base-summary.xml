@@ -17,17 +17,18 @@
       {{SETTINGS_XML}}
     </configuration>
     <notes>
-      Treat dates as ISO-8601 and currencies as provided. Assume the measure is additive unless stated otherwise.
-      Explicitly reference the cadence, metric interpretation, and trend guidance when describing performance.
+      Treat dates as ISO-8601. Reference currencies only when they clarify the story and avoid generic phrases like 'currency units'. Assume the measure is additive unless stated otherwise, but do not label it as additive or non-additive in the narrative.
+      Use the cadence, metric interpretation, and trend guidance to shape the narrative without restating them verbatim or citing internal labels.
     </notes>
   </context>
   <task>
     <goal>Explain what is happening, why it matters, and what to do next for business stakeholders.</goal>
     <guidance>
-      <focus>Anchor the analysis on the cadence, additivity, and trend meaning defined in the configuration.</focus>
+      <focus>Let the cadence, additivity, and trend meaning guide your emphasis while avoiding rote recitation of configuration details.</focus>
       <focus>Follow the report skeleton instructions to keep each section short, outcome focused, and business ready.</focus>
       <constraints>
         <constraint>Keep the response under 180 words.</constraint>
+        <constraint>Avoid naming the metric's additivity status or mentioning generic currency units unless essential to the insight.</constraint>
         <constraint>Use professional tone suitable for executive briefings.</constraint>
         <constraint>Avoid bullet lists unless explicitly requested.</constraint>
       </constraints>
@@ -43,4 +44,5 @@
     </format>
   </response>
 </prompt>
+
 
