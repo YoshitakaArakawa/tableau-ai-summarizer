@@ -10,7 +10,7 @@
     <name resource-id="name" />
     <description resource-id="description" />
     <author name="YOUR_NAME" email="you@example.com" organization="YOUR_ORG" website="https://www.example.com" />
-    <min-api-version>1.1</min-api-version>
+    <min-api-version>1.11</min-api-version>
     <source-location>
       <!-- Use https:// for production deployments -->
       <url>http://localhost:8787/index.html</url>
@@ -49,3 +49,4 @@
     </resource>
   </resources>
 </manifest>
+

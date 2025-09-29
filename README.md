@@ -42,7 +42,7 @@ A Tableau worksheet extension that captures summary data, sends it to the OpenAI
 5. **Generate a summary**
    - Drop a measure on the 'Measure' encoding and a date field on the 'Date' encoding.
    - Use *Format Extension* to adjust options (period/additive/trend).
-   - Use *Regenerate Summary* to rerun the call on demand, or *Stop* to cancel an in-flight request.
+   - Use *Generate Summary* to run the call on demand, or *Stop* to cancel an in-flight request.\r\n   - Keep exactly one field on the Measure slot and one on the Date slot; the summary will error if either is missing or duplicated.\r\n   - Open the Format Extension dialog to choose reporting language (English or Japanese) and other narrative options.
    - The generated text appears in the extension area after the OpenAI call completes.\r\n## Environment Variables
 
 | Variable | Description |
@@ -75,6 +75,9 @@ A Tableau worksheet extension that captures summary data, sends it to the OpenAI
 ## License
 
 This project is licensed under the MIT License (see [LICENSE](./LICENSE)).
+
+
+
 
 
 
