@@ -180,7 +180,8 @@ function getCurrentSettings() {
   return {
     [SETTINGS_KEYS.period]: stored[SETTINGS_KEYS.period] || DEFAULT_SETTINGS[SETTINGS_KEYS.period],
     [SETTINGS_KEYS.additive]: stored[SETTINGS_KEYS.additive] || DEFAULT_SETTINGS[SETTINGS_KEYS.additive],
-    [SETTINGS_KEYS.trend]: stored[SETTINGS_KEYS.trend] || DEFAULT_SETTINGS[SETTINGS_KEYS.trend]
+    [SETTINGS_KEYS.trend]: stored[SETTINGS_KEYS.trend] || DEFAULT_SETTINGS[SETTINGS_KEYS.trend],
+    [SETTINGS_KEYS.language]: stored[SETTINGS_KEYS.language] || DEFAULT_SETTINGS[SETTINGS_KEYS.language]
   };
 }
 
