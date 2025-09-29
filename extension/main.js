@@ -7,16 +7,31 @@ import { ensureModelConfigLoaded, getModelConfig } from './services/runtimeConfi
 import { ensurePromptTemplateLoaded, buildPromptPayload } from './services/promptTemplate.js';
 import { fetchSummaryDataCsv } from './services/summaryData.js';
 import { buildSettingsReferenceXml } from './utils/xml.js';
-import { sendSummaryRequest } from './services/apiClient.js';
+import { sendSummaryRequest, notifySummaryCancellation } from './services/apiClient.js';
 
 let statusElement;
 let outputElement;
+let regenerateButton;
+let cancelButton;
 let worksheet;
 let isGenerating = false;
+let activeAbortController = null;
 
 function setStatus(message) {
   if (statusElement) {
     statusElement.textContent = message || '';
+  }
+}
+
+function setGeneratingState(running) {
+  isGenerating = running;
+
+  if (regenerateButton) {
+    regenerateButton.disabled = running;
+  }
+
+  if (cancelButton) {
+    cancelButton.disabled = !running;
   }
 }
 
@@ -39,12 +54,35 @@ function buildSummaryReferenceXml() {
   return '<dataReference file="' + SUMMARY_CSV_FILENAME + '" />';
 }
 
+function cancelActiveSummary() {
+  if (!isGenerating || !activeAbortController) {
+    return;
+  }
+
+  setStatus('Cancelling summary request...');
+
+  const controller = activeAbortController;
+  activeAbortController = null;
+  controller.abort();
+
+  if (cancelButton) {
+    cancelButton.disabled = true;
+  }
+
+  notifySummaryCancellation({
+    reason: 'manual-cancel',
+    source: 'extension-button'
+  }).catch(() => {});
+}
+
 function triggerSummaryGeneration(reason) {
   if (!worksheet || isGenerating) {
     return;
   }
 
-  isGenerating = true;
+  const abortController = new AbortController();
+  activeAbortController = abortController;
+  setGeneratingState(true);
   const suffix = reason ? ' (' + reason + ')' : '';
   setStatus('Generating summary' + suffix + '...');
 
@@ -68,7 +106,8 @@ function triggerSummaryGeneration(reason) {
         promptXml,
         modelConfig,
         settings: settingsSnapshot,
-        reason
+        reason,
+        signal: abortController.signal
       });
     })
     .then((response) => {
@@ -81,9 +120,17 @@ function triggerSummaryGeneration(reason) {
         setStatus('Summary request completed without content.');
       }
     })
-    .catch(handleError)
+    .catch((error) => {
+      if (error && error.name === 'AbortError') {
+        setStatus('Summary request cancelled.');
+        return;
+      }
+
+      handleError(error);
+    })
     .finally(() => {
-      isGenerating = false;
+      activeAbortController = null;
+      setGeneratingState(false);
     });
 }
 
@@ -146,6 +193,22 @@ function initializeExtension() {
 function onDomReady() {
   statusElement = document.getElementById('status');
   outputElement = document.getElementById('llmText');
+  regenerateButton = document.getElementById('regenerateBtn');
+  cancelButton = document.getElementById('cancelBtn');
+
+  if (regenerateButton) {
+    regenerateButton.addEventListener('click', () => {
+      triggerSummaryGeneration('manual-retry');
+    });
+    regenerateButton.disabled = true;
+  }
+
+  if (cancelButton) {
+    cancelButton.addEventListener('click', () => {
+      cancelActiveSummary();
+    });
+    cancelButton.disabled = true;
+  }
 
   setStatus('Extension loading...');
   initializeExtension();

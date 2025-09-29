@@ -77,8 +77,20 @@ function createSummaryRouter({ logger }) {
     }
   });
 
+  router.post('/summary/cancel', (req, res) => {
+    const { reason, source } = req.body || {};
+
+    logger.info('Summary generation cancelled by client', {
+      reason: reason || 'unspecified',
+      source: source || 'unknown'
+    });
+
+    res.json({ status: 'logged' });
+  });
   return router;
 }
 
 module.exports = createSummaryRouter;
+
+
 

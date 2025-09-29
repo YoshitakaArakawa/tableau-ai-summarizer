@@ -47,3 +47,39 @@ body {
   outline: 2px solid #4a8fe7;
   outline-offset: 2px;
 }
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.action-button {
+  padding: 0.5rem 1rem;
+  border: 1px solid #1f3b63;
+  border-radius: 4px;
+  background-color: #1f3b63;
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.action-button.secondary {
+  background-color: #ffffff;
+  color: #1f3b63;
+}
+
+.action-button:disabled {
+  background-color: #9fb8db;
+  border-color: #9fb8db;
+  cursor: not-allowed;
+  color: #f1f3f8;
+}
+
+.action-button.secondary:disabled {
+  background-color: #e4ebf7;
+  border-color: #c0d6f5;
+  color: #8ea1c1;
+}

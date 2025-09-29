@@ -33,7 +33,7 @@ A Tableau worksheet extension that captures summary data, sends it to the OpenAI
    By default the server listens on port `8787` (configurable via `EXTENSION_PORT`).
    - Static files under `extension/` are served at `http://localhost:8787/index.html`.
    - The summary endpoint lives at `http://localhost:8787/api/llm/summary`.
-   - Logs are written to `logs/server.log` when `LOG_TO_FILE=true`.
+   - Logs are written exclusively to `logs/server.log` when `LOG_TO_FILE=true`.
 
 4. **Install the extension in Tableau Desktop**
    - Open Tableau Desktop and connect to your data source.
@@ -42,9 +42,8 @@ A Tableau worksheet extension that captures summary data, sends it to the OpenAI
 5. **Generate a summary**
    - Drop a measure on the 'Measure' encoding and a date field on the 'Date' encoding.
    - Use *Format Extension* to adjust options (period/additive/trend).
-   - The generated text appears in the extension area after the OpenAI call completes.
-
-## Environment Variables
+   - Use *Regenerate Summary* to rerun the call on demand, or *Stop* to cancel an in-flight request.
+   - The generated text appears in the extension area after the OpenAI call completes.\r\n## Environment Variables
 
 | Variable | Description |
 | --- | --- |
@@ -59,7 +58,7 @@ A Tableau worksheet extension that captures summary data, sends it to the OpenAI
 
 - Runtime logs: `logs/server.log`
 - Tableau Desktop console output appears in `My Tableau Repository/Logs/log.txt`.
-- To avoid mixing console/stdout logs with file logs, set `LOG_TO_FILE=true` and disable any extra `console.log` in production.
+- When `LOG_TO_FILE=true`, the server writes exclusively to the log file, so disable any extra `console.log` in production.
 
 ## Usage Tips
 
@@ -76,3 +75,7 @@ A Tableau worksheet extension that captures summary data, sends it to the OpenAI
 ## License
 
 This project is licensed under the MIT License (see [LICENSE](./LICENSE)).
+
+
+
+

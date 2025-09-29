@@ -8,7 +8,8 @@ function createLogger({ enabled = false, logDirectory, logFilePath }) {
 
   if (logToFile && resolvedDirectory && resolvedFilePath) {
     fs.mkdirSync(resolvedDirectory, { recursive: true });
-    fs.writeFileSync(resolvedFilePath, '', 'utf8');
+    const handle = fs.openSync(resolvedFilePath, 'a');
+    fs.closeSync(handle);
   }
 
   function write(level, message, detail) {
@@ -19,16 +20,24 @@ function createLogger({ enabled = false, logDirectory, logFilePath }) {
 
     if (detail !== undefined) {
       record.detail = detail;
-      consoleMethod(formattedMessage, detail);
-    } else {
-      consoleMethod(formattedMessage);
     }
 
-    if (logToFile && resolvedFilePath) {
+    const shouldWriteToFile = logToFile && resolvedFilePath;
+    const shouldWriteToConsole = !shouldWriteToFile;
+
+    if (shouldWriteToFile) {
       try {
         fs.appendFileSync(resolvedFilePath, JSON.stringify(record) + '\n', 'utf8');
       } catch (error) {
         console.error('[Server][Logger] Failed to write log file', error);
+      }
+    }
+
+    if (shouldWriteToConsole) {
+      if (detail !== undefined) {
+        consoleMethod(formattedMessage, detail);
+      } else {
+        consoleMethod(formattedMessage);
       }
     }
   }

@@ -9,6 +9,10 @@
 <body>
   <main class="container" role="main">
     <p id="status" class="status-banner" role="status" aria-live="polite"></p>
+    <div class="button-row">
+      <button id="regenerateBtn" class="action-button" type="button">Regenerate Summary</button>
+      <button id="cancelBtn" class="action-button secondary" type="button">Stop</button>
+    </div>
     <label class="field-label" for="llmText">Generated Text</label>
     <textarea id="llmText" class="text-area" placeholder="LLM generated summary will appear here." readonly></textarea>
   </main>
@@ -16,3 +20,5 @@
   <script type="module" src="main.js"></script>
 </body>
 </html>
+
+
