@@ -203,7 +203,67 @@ export function fetchSummaryDataCsv(worksheet, expectedEncodings = {}) {
 
       const summaryMetadata = analyseSummaryColumns(dataTable.columns || [], expectedEncodings);
       const csvText = dataTableToCsv(dataTable);
+      const chartData = extractChartData(dataTable, summaryMetadata);
 
-      return { csvText, summaryMetadata };
+      return { csvText, summaryMetadata, chartData };
     });
+}
+
+function extractChartData(dataTable, summaryMetadata) {
+  if (!dataTable || !dataTable.data || !dataTable.columns) {
+    return [];
+  }
+
+  const measureName = summaryMetadata?.measure?.fieldName || summaryMetadata?.measure?.displayName || '';
+  const dateName = summaryMetadata?.date?.fieldName || summaryMetadata?.date?.displayName || '';
+
+  const measureColIndex = dataTable.columns.findIndex(col => {
+    const colName = col?.fieldName || col?.displayName || '';
+    return canonicalizeName(colName) === canonicalizeName(measureName);
+  });
+
+  const dateColIndex = dataTable.columns.findIndex(col => {
+    const colName = col?.fieldName || col?.displayName || '';
+    return canonicalizeName(colName) === canonicalizeName(dateName);
+  });
+
+  if (measureColIndex === -1 || dateColIndex === -1) {
+    return [];
+  }
+
+  const aggregationMap = new Map();
+
+  dataTable.data.forEach(row => {
+    const rawDate = row[dateColIndex]?.value;
+    const formattedDate = row[dateColIndex]?.formattedValue || rawDate || '';
+    const measureValue = parseFloat(row[measureColIndex]?.value) || 0;
+
+    const dateKey = String(rawDate || formattedDate);
+
+    if (aggregationMap.has(dateKey)) {
+      const existing = aggregationMap.get(dateKey);
+      existing.value += measureValue;
+    } else {
+      aggregationMap.set(dateKey, {
+        rawDate: rawDate,
+        label: formattedDate,
+        value: measureValue
+      });
+    }
+  });
+
+  const chartData = Array.from(aggregationMap.values());
+
+  chartData.sort((a, b) => {
+    const dateA = new Date(a.rawDate);
+    const dateB = new Date(b.rawDate);
+
+    if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) {
+      return 0;
+    }
+
+    return dateA - dateB;
+  });
+
+  return chartData;
 }

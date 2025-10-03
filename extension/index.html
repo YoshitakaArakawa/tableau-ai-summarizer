@@ -13,6 +13,10 @@
       <button id="generateBtn" class="action-button" type="button">Generate Summary</button>
       <button id="cancelBtn" class="action-button secondary" type="button">Stop</button>
     </div>
+    <div id="chartContainer" style="margin-bottom: 16px; display: none; position: relative;">
+      <canvas id="trendChart" width="600" height="150" style="width: 100%; height: auto;"></canvas>
+      <div id="chartTooltip" style="display: none; position: fixed; background: rgba(0, 0, 0, 0.85); color: white; padding: 8px 12px; border-radius: 4px; font-size: 12px; pointer-events: none; z-index: 1000; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
+    </div>
     <label class="field-label" for="llmText">Generated Text</label>
     <textarea id="llmText" class="text-area" placeholder="LLM generated summary will appear here." readonly></textarea>
   </main>

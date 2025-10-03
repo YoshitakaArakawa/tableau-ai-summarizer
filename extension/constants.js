@@ -2,14 +2,16 @@ export const SETTINGS_KEYS = {
   period: 'period',
   additive: 'isAdditiveMetric',
   trend: 'trendMeaning',
-  language: 'summaryLanguage'
+  language: 'summaryLanguage',
+  cumulative: 'isCumulative'
 };
 
 export const DEFAULT_SETTINGS = {
   [SETTINGS_KEYS.period]: 'daily',
   [SETTINGS_KEYS.additive]: 'false',
   [SETTINGS_KEYS.trend]: 'neutral',
-  [SETTINGS_KEYS.language]: 'en'
+  [SETTINGS_KEYS.language]: 'en',
+  [SETTINGS_KEYS.cumulative]: 'false'
 };
 
 export const PERIOD_LABELS = {

@@ -8,6 +8,7 @@ import { ensurePromptTemplateLoaded, buildPromptPayload } from './services/promp
 import { fetchSummaryDataCsv } from './services/summaryData.js';
 import { buildSettingsReferenceXml } from './utils/xml.js';
 import { sendSummaryRequest, notifySummaryCancellation } from './services/apiClient.js';
+import { renderChart } from './services/chartRenderer.js';
 
 const MEASURE_ENCODING_ID = 'measure';
 const DATE_ENCODING_ID = 'time';
@@ -150,6 +151,8 @@ let cancelButton;
 let worksheet;
 let isGenerating = false;
 let activeAbortController = null;
+let chartCanvas;
+let chartContainer;
 
 function setStatus(message) {
   if (statusElement) {
@@ -181,7 +184,8 @@ function getCurrentSettings() {
     [SETTINGS_KEYS.period]: stored[SETTINGS_KEYS.period] || DEFAULT_SETTINGS[SETTINGS_KEYS.period],
     [SETTINGS_KEYS.additive]: stored[SETTINGS_KEYS.additive] || DEFAULT_SETTINGS[SETTINGS_KEYS.additive],
     [SETTINGS_KEYS.trend]: stored[SETTINGS_KEYS.trend] || DEFAULT_SETTINGS[SETTINGS_KEYS.trend],
-    [SETTINGS_KEYS.language]: stored[SETTINGS_KEYS.language] || DEFAULT_SETTINGS[SETTINGS_KEYS.language]
+    [SETTINGS_KEYS.language]: stored[SETTINGS_KEYS.language] || DEFAULT_SETTINGS[SETTINGS_KEYS.language],
+    [SETTINGS_KEYS.cumulative]: stored[SETTINGS_KEYS.cumulative] || DEFAULT_SETTINGS[SETTINGS_KEYS.cumulative]
   };
 }
 
@@ -224,18 +228,22 @@ function triggerSummaryGeneration(reason = 'manual') {
     .then(() => getRequiredEncodingAssignments(worksheet))
     .then((encodingAssignments) => {
       const settingsSnapshot = getCurrentSettings();
-      return fetchSummaryDataCsv(worksheet, encodingAssignments).then(({ csvText, summaryMetadata }) => ({
+      return fetchSummaryDataCsv(worksheet, encodingAssignments).then(({ csvText, summaryMetadata, chartData }) => ({
         csvText,
         settingsSnapshot,
         summaryMetadata,
-        encodingAssignments
+        encodingAssignments,
+        chartData
       }));
     })
-    .then(({ csvText, settingsSnapshot, summaryMetadata, encodingAssignments }) => {
+    .then(({ csvText, settingsSnapshot, summaryMetadata, encodingAssignments, chartData }) => {
       const summaryXml = buildSummaryReferenceXml();
       const settingsXml = buildSettingsReferenceXml(settingsSnapshot, summaryMetadata);
       const measureLabel = formatFieldLabel(summaryMetadata.measure) || formatFieldLabel(encodingAssignments.measure);
       const dateLabel = formatFieldLabel(summaryMetadata.date) || formatFieldLabel(encodingAssignments.date);
+
+      window.currentEncodingAssignments = encodingAssignments;
+      window.currentSummaryMetadata = summaryMetadata;
 
       if (measureLabel && dateLabel) {
         setStatus(`Generating summary for ${measureLabel} by ${dateLabel}...`);
@@ -257,9 +265,9 @@ function triggerSummaryGeneration(reason = 'manual') {
         settings: settingsSnapshot,
         reason,
         signal: abortController.signal
-      });
+      }).then((response) => ({ response, chartData, settingsSnapshot, summaryMetadata, encodingAssignments }));
     })
-    .then((response) => {
+    .then(({ response, chartData, settingsSnapshot, summaryMetadata, encodingAssignments }) => {
       if (response && typeof response.summary === 'string') {
         if (outputElement) {
           outputElement.value = response.summary;
@@ -267,6 +275,20 @@ function triggerSummaryGeneration(reason = 'manual') {
         setStatus('Summary updated.');
       } else {
         setStatus('Summary request completed without content.');
+      }
+
+      if (chartCanvas && chartData && chartData.length > 0) {
+        const isCumulative = settingsSnapshot[SETTINGS_KEYS.cumulative] === 'true';
+        const measureName = formatFieldLabel(summaryMetadata.measure) || formatFieldLabel(encodingAssignments.measure) || 'Value';
+        renderChart(chartCanvas, chartData, {
+          cumulative: isCumulative,
+          measureName: measureName
+        });
+        if (chartContainer) {
+          chartContainer.style.display = 'block';
+        }
+      } else if (chartContainer) {
+        chartContainer.style.display = 'none';
       }
     })
     .catch((error) => {
@@ -356,6 +378,8 @@ function onDomReady() {
   outputElement = document.getElementById('llmText');
   generateButton = document.getElementById('generateBtn');
   cancelButton = document.getElementById('cancelBtn');
+  chartCanvas = document.getElementById('trendChart');
+  chartContainer = document.getElementById('chartContainer');
 
   if (generateButton) {
     generateButton.addEventListener('click', () => {
