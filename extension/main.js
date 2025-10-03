@@ -9,6 +9,7 @@ import { fetchSummaryDataCsv } from './services/summaryData.js';
 import { buildSettingsReferenceXml } from './utils/xml.js';
 import { sendSummaryRequest, notifySummaryCancellation } from './services/apiClient.js';
 import { renderChart } from './services/chartRenderer.js';
+import { applyDateFilter } from './services/dateFilter.js';
 
 const MEASURE_ENCODING_ID = 'measure';
 const DATE_ENCODING_ID = 'time';
@@ -182,10 +183,10 @@ function getCurrentSettings() {
   const stored = tableau.extensions.settings.getAll();
   return {
     [SETTINGS_KEYS.period]: stored[SETTINGS_KEYS.period] || DEFAULT_SETTINGS[SETTINGS_KEYS.period],
-    [SETTINGS_KEYS.additive]: stored[SETTINGS_KEYS.additive] || DEFAULT_SETTINGS[SETTINGS_KEYS.additive],
     [SETTINGS_KEYS.trend]: stored[SETTINGS_KEYS.trend] || DEFAULT_SETTINGS[SETTINGS_KEYS.trend],
     [SETTINGS_KEYS.language]: stored[SETTINGS_KEYS.language] || DEFAULT_SETTINGS[SETTINGS_KEYS.language],
-    [SETTINGS_KEYS.cumulative]: stored[SETTINGS_KEYS.cumulative] || DEFAULT_SETTINGS[SETTINGS_KEYS.cumulative]
+    [SETTINGS_KEYS.cumulative]: stored[SETTINGS_KEYS.cumulative] || DEFAULT_SETTINGS[SETTINGS_KEYS.cumulative],
+    [SETTINGS_KEYS.timezone]: stored[SETTINGS_KEYS.timezone] || DEFAULT_SETTINGS[SETTINGS_KEYS.timezone]
   };
 }
 
@@ -226,8 +227,21 @@ function triggerSummaryGeneration(reason = 'manual') {
 
   Promise.all([ensureModelConfigLoaded(), ensurePromptTemplateLoaded()])
     .then(() => getRequiredEncodingAssignments(worksheet))
-    .then((encodingAssignments) => {
+    .then(async (encodingAssignments) => {
       const settingsSnapshot = getCurrentSettings();
+      const periodType = settingsSnapshot[SETTINGS_KEYS.period];
+      const timezone = settingsSnapshot[SETTINGS_KEYS.timezone] || 'UTC';
+      const dateFieldName = encodingAssignments.date.fieldName;
+
+      // Apply date filter before fetching summary data
+      setStatus('Applying date filter...');
+      try {
+        await applyDateFilter(worksheet, dateFieldName, periodType, timezone);
+      } catch (error) {
+        console.warn('[Extension] Failed to apply date filter before summary', error);
+      }
+
+      setStatus('Fetching summary data...');
       return fetchSummaryDataCsv(worksheet, encodingAssignments).then(({ csvText, summaryMetadata, chartData }) => ({
         csvText,
         settingsSnapshot,
@@ -267,7 +281,7 @@ function triggerSummaryGeneration(reason = 'manual') {
         signal: abortController.signal
       }).then((response) => ({ response, chartData, settingsSnapshot, summaryMetadata, encodingAssignments }));
     })
-    .then(({ response, chartData, settingsSnapshot, summaryMetadata, encodingAssignments }) => {
+    .then(({ response }) => {
       if (response && typeof response.summary === 'string') {
         if (outputElement) {
           outputElement.value = response.summary;
@@ -275,20 +289,6 @@ function triggerSummaryGeneration(reason = 'manual') {
         setStatus('Summary updated.');
       } else {
         setStatus('Summary request completed without content.');
-      }
-
-      if (chartCanvas && chartData && chartData.length > 0) {
-        const isCumulative = settingsSnapshot[SETTINGS_KEYS.cumulative] === 'true';
-        const measureName = formatFieldLabel(summaryMetadata.measure) || formatFieldLabel(encodingAssignments.measure) || 'Value';
-        renderChart(chartCanvas, chartData, {
-          cumulative: isCumulative,
-          measureName: measureName
-        });
-        if (chartContainer) {
-          chartContainer.style.display = 'block';
-        }
-      } else if (chartContainer) {
-        chartContainer.style.display = 'none';
       }
     })
     .catch((error) => {
@@ -328,12 +328,81 @@ function openConfigurationDialog() {
 function registerEventListeners() {
   const settings = tableau.extensions.settings;
   settings.addEventListener(tableau.TableauEventType.SettingsChanged, () => {
-    setStatus('Settings updated. Click "Generate Summary" to refresh.');
+    setStatus('Settings updated. Applying date filter...');
+    applyDateFilterFromSettings().catch((error) => {
+      console.warn('[Extension] Failed to apply date filter on settings change', error);
+      setStatus('Settings updated. Click "Generate Summary" to refresh.');
+    });
   });
 
   worksheet.addEventListener(tableau.TableauEventType.SummaryDataChanged, () => {
-    setStatus('Worksheet data changed. Click "Generate Summary" when you are ready to refresh.');
+    setStatus('Worksheet data changed. Refreshing chart...');
+    renderChartFromWorksheet().catch((error) => {
+      console.warn('[Extension] Failed to auto-render chart on data change', error);
+      setStatus('Worksheet data changed. Click "Generate Summary" when you are ready to refresh.');
+    });
   });
+}
+
+async function applyDateFilterFromSettings() {
+  if (!worksheet) {
+    return;
+  }
+
+  const currentSettings = getCurrentSettings();
+  const periodType = currentSettings[SETTINGS_KEYS.period];
+  const timezone = currentSettings[SETTINGS_KEYS.timezone] || 'UTC';
+
+  try {
+    const encodingAssignments = await getRequiredEncodingAssignments(worksheet);
+    const dateFieldName = encodingAssignments.date.fieldName;
+
+    await applyDateFilter(worksheet, dateFieldName, periodType, timezone);
+    setStatus('Date filter applied. Refreshing chart...');
+
+    // Auto-render chart after filter is applied
+    await renderChartFromWorksheet();
+  } catch (error) {
+    console.warn('[Extension] Could not apply date filter', error);
+    setStatus('Settings updated. Click "Generate Summary" to refresh.');
+  }
+}
+
+async function renderChartFromWorksheet() {
+  if (!worksheet || !chartCanvas) {
+    return;
+  }
+
+  try {
+    const encodingAssignments = await getRequiredEncodingAssignments(worksheet);
+    const { chartData, summaryMetadata } = await fetchSummaryDataCsv(worksheet, encodingAssignments);
+
+    if (chartData && chartData.length > 0) {
+      const currentSettings = getCurrentSettings();
+      const isCumulative = currentSettings[SETTINGS_KEYS.cumulative] === 'true';
+      const measureName = formatFieldLabel(summaryMetadata.measure) || formatFieldLabel(encodingAssignments.measure) || 'Value';
+
+      renderChart(chartCanvas, chartData, {
+        cumulative: isCumulative,
+        measureName: measureName
+      });
+
+      if (chartContainer) {
+        chartContainer.style.display = 'block';
+      }
+      setStatus('Chart updated.');
+    } else {
+      if (chartContainer) {
+        chartContainer.style.display = 'none';
+      }
+      setStatus('No data available for chart.');
+    }
+  } catch (error) {
+    console.warn('[Extension] Failed to render chart', error);
+    if (chartContainer) {
+      chartContainer.style.display = 'none';
+    }
+  }
 }
 
 function initializeExtension() {

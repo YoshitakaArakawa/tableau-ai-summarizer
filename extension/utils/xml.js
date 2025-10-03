@@ -1,14 +1,40 @@
 import { SETTINGS_KEYS, PERIOD_LABELS, TREND_LABELS, LANGUAGE_OPTIONS } from '../constants.js';
 
-const PERIOD_GUIDANCE = {
-  daily: 'Compare day-over-day changes and surface weekday or weekend patterns when relevant.',
-  weekly: 'Compare week-over-week performance and highlight material shifts in weekly totals.',
-  monthly: 'Summarize month-over-month movement and call out cumulative changes that matter to leadership.'
+// Period comparison strategy patterns
+const COMPARISON_PATTERNS = {
+  sequential: 'Compare performance against the immediately preceding period of equal length. Highlight sequential momentum, reversals, or notable shifts.',
+  periodToDate: 'Compare progress against the same point in the prior period. Frame results as pacing ahead or behind, and note implications for the remaining time.',
+  trendFocused: 'Emphasize directional trends and sustained momentum. Use the rolling window to smooth short-term volatility and surface persistent patterns.'
 };
 
-const ADDITIVITY_GUIDANCE = {
-  true: 'Totals and cumulative comparisons remain reliable; leverage them when they clarify the story.',
-  false: 'Totals can mislead; emphasize averages, ratios, or rates of change instead of sums, and avoid naming the classification explicitly.'
+// Map each period type to its comparison pattern
+const PERIOD_PATTERN_MAP = {
+  // Complete Period → Sequential comparison
+  lastDay: 'sequential',
+  lastWeek: 'sequential',
+  lastMonth: 'sequential',
+
+  // Period to Date → Period-to-date comparison
+  wtd: 'periodToDate',
+  mtd: 'periodToDate',
+  qtd: 'periodToDate',
+
+  // Rolling Window → Trend-focused comparison
+  rolling7: 'trendFocused',
+  rolling14: 'trendFocused',
+  rolling28: 'trendFocused'
+};
+
+const PERIOD_GUIDANCE = {
+  lastDay: COMPARISON_PATTERNS.sequential,
+  lastWeek: COMPARISON_PATTERNS.sequential,
+  lastMonth: COMPARISON_PATTERNS.sequential,
+  wtd: COMPARISON_PATTERNS.periodToDate,
+  mtd: COMPARISON_PATTERNS.periodToDate,
+  qtd: COMPARISON_PATTERNS.periodToDate,
+  rolling7: COMPARISON_PATTERNS.trendFocused,
+  rolling14: COMPARISON_PATTERNS.trendFocused,
+  rolling28: COMPARISON_PATTERNS.trendFocused
 };
 
 const TREND_GUIDANCE = {
@@ -96,13 +122,6 @@ function describePeriod(code) {
   return { code: normalized, label, guidance };
 }
 
-function describeAdditivity(flag) {
-  const normalized = normalizeSettingKey(flag);
-  const guidance = ADDITIVITY_GUIDANCE[normalized] || 'Clarify whether totals or ratios should anchor the narrative.';
-
-  return { flag: normalized, guidance };
-}
-
 function describeTrend(code) {
   const normalized = normalizeSettingKey(code);
   const label = TREND_LABELS[normalized] || 'Neutral';
@@ -117,7 +136,6 @@ export function buildSettingsReferenceXml(settings, summaryMetadata = {}) {
   }
 
   const periodInfo = describePeriod(settings[SETTINGS_KEYS.period]);
-  const additiveInfo = describeAdditivity(settings[SETTINGS_KEYS.additive]);
   const trendInfo = describeTrend(settings[SETTINGS_KEYS.trend]);
   const languageInfo = describeLanguage(settings[SETTINGS_KEYS.language]);
 
@@ -132,9 +150,6 @@ export function buildSettingsReferenceXml(settings, summaryMetadata = {}) {
     `  <period code="${escapeXmlValue(periodInfo.code)}" label="${escapeXmlValue(periodInfo.label)}">`,
     `    <guidance>${escapeXmlValue(periodInfo.guidance)}</guidance>`,
     '  </period>',
-    `  <metricInterpretation additive="${escapeXmlValue(additiveInfo.flag)}">`,
-    `    <guidance>${escapeXmlValue(additiveInfo.guidance)}</guidance>`,
-    '  </metricInterpretation>',
     `  <trendMeaning code="${escapeXmlValue(trendInfo.code)}" label="${escapeXmlValue(trendInfo.label)}">`,
     `    <guidance>${escapeXmlValue(trendInfo.guidance)}</guidance>`,
     '  </trendMeaning>',

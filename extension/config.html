@@ -15,19 +15,23 @@
       <section class="form-section">
         <label class="form-label" for="periodSelect">Reporting period</label>
         <select id="periodSelect" class="form-select">
-          <option value="daily">Daily</option>
-          <option value="weekly">Weekly</option>
-          <option value="monthly">Monthly</option>
+          <optgroup label="Period to Date">
+            <option value="wtd">Week to Date (WTD)</option>
+            <option value="mtd">Month to Date (MTD)</option>
+            <option value="qtd">Quarter to Date (QTD)</option>
+          </optgroup>
+          <optgroup label="Complete Period">
+            <option value="lastDay">Last Day</option>
+            <option value="lastWeek">Last Week</option>
+            <option value="lastMonth">Last Month</option>
+          </optgroup>
+          <optgroup label="Rolling Window">
+            <option value="rolling7">Rolling 7 Days</option>
+            <option value="rolling14">Rolling 14 Days</option>
+            <option value="rolling28">Rolling 28 Days</option>
+          </optgroup>
         </select>
-        <p class="form-hint">Defines the cadence used when describing the time series.</p>
-      </section>
-
-      <section class="form-section">
-        <label class="checkbox-label">
-          <input id="additiveCheckbox" type="checkbox" />
-          Treat the measure as additive across periods
-        </label>
-        <p class="form-hint">Disable for metrics such as unique users or ratios.</p>
+        <p class="form-hint">Defines the time range for analysis. All periods end on the previous day.</p>
       </section>
 
       <section class="form-section">
@@ -36,6 +40,15 @@
           Display cumulative values in chart
         </label>
         <p class="form-hint">When enabled, shows cumulative line chart instead of spark line.</p>
+      </section>
+
+      <section class="form-section">
+        <label class="form-label" for="timezoneSelect">Timezone</label>
+        <select id="timezoneSelect" class="form-select">
+          <option value="UTC">UTC</option>
+          <option value="JST">JST (UTC+9)</option>
+        </select>
+        <p class="form-hint">Timezone used for date calculations. All periods end on the previous day in this timezone.</p>
       </section>
 
       <section class="form-section">

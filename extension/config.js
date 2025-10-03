@@ -1,25 +1,25 @@
 (function () {
   const SETTINGS_KEYS = {
     period: 'period',
-    additive: 'isAdditiveMetric',
     trend: 'trendMeaning',
     language: 'summaryLanguage',
-    cumulative: 'isCumulative'
+    cumulative: 'isCumulative',
+    timezone: 'timezone'
   };
 
   const DEFAULTS = {
-    [SETTINGS_KEYS.period]: 'daily',
-    [SETTINGS_KEYS.additive]: 'false',
+    [SETTINGS_KEYS.period]: 'wtd',
     [SETTINGS_KEYS.trend]: 'neutral',
     [SETTINGS_KEYS.language]: 'en',
-    [SETTINGS_KEYS.cumulative]: 'false'
+    [SETTINGS_KEYS.cumulative]: 'false',
+    [SETTINGS_KEYS.timezone]: 'UTC'
   };
 
   let periodSelect;
-  let additiveCheckbox;
   let trendSelect;
   let languageSelect;
   let cumulativeCheckbox;
+  let timezoneSelect;
 
   function closeDialogWith(message) {
     tableau.extensions.ui.closeDialog(message || 'Configuration dialog closed.');
@@ -39,10 +39,10 @@
       const parsed = JSON.parse(payload);
       return {
         [SETTINGS_KEYS.period]: parsed[SETTINGS_KEYS.period] || DEFAULTS[SETTINGS_KEYS.period],
-        [SETTINGS_KEYS.additive]: parsed[SETTINGS_KEYS.additive] || DEFAULTS[SETTINGS_KEYS.additive],
         [SETTINGS_KEYS.trend]: parsed[SETTINGS_KEYS.trend] || DEFAULTS[SETTINGS_KEYS.trend],
         [SETTINGS_KEYS.language]: parsed[SETTINGS_KEYS.language] || DEFAULTS[SETTINGS_KEYS.language],
-        [SETTINGS_KEYS.cumulative]: parsed[SETTINGS_KEYS.cumulative] || DEFAULTS[SETTINGS_KEYS.cumulative]
+        [SETTINGS_KEYS.cumulative]: parsed[SETTINGS_KEYS.cumulative] || DEFAULTS[SETTINGS_KEYS.cumulative],
+        [SETTINGS_KEYS.timezone]: parsed[SETTINGS_KEYS.timezone] || DEFAULTS[SETTINGS_KEYS.timezone]
       };
     } catch (error) {
       console.warn('[Extension][Dialog] Failed to parse payload', error);
@@ -52,19 +52,19 @@
 
   function applySettingsToForm(settings) {
     periodSelect.value = settings[SETTINGS_KEYS.period];
-    additiveCheckbox.checked = settings[SETTINGS_KEYS.additive] === 'true';
     trendSelect.value = settings[SETTINGS_KEYS.trend];
     languageSelect.value = settings[SETTINGS_KEYS.language];
     cumulativeCheckbox.checked = settings[SETTINGS_KEYS.cumulative] === 'true';
+    timezoneSelect.value = settings[SETTINGS_KEYS.timezone];
   }
 
   function collectFormValues() {
     return {
       [SETTINGS_KEYS.period]: periodSelect.value,
-      [SETTINGS_KEYS.additive]: additiveCheckbox.checked ? 'true' : 'false',
       [SETTINGS_KEYS.trend]: trendSelect.value,
       [SETTINGS_KEYS.language]: languageSelect.value,
-      [SETTINGS_KEYS.cumulative]: cumulativeCheckbox.checked ? 'true' : 'false'
+      [SETTINGS_KEYS.cumulative]: cumulativeCheckbox.checked ? 'true' : 'false',
+      [SETTINGS_KEYS.timezone]: timezoneSelect.value
     };
   }
 
@@ -89,10 +89,10 @@
 
   function onReady() {
     periodSelect = document.getElementById('periodSelect');
-    additiveCheckbox = document.getElementById('additiveCheckbox');
     trendSelect = document.getElementById('trendSelect');
     languageSelect = document.getElementById('languageSelect');
     cumulativeCheckbox = document.getElementById('cumulativeCheckbox');
+    timezoneSelect = document.getElementById('timezoneSelect');
 
     document.getElementById('saveDialog').addEventListener('click', onSave);
     document.getElementById('cancelDialog').addEventListener('click', onCancel);
