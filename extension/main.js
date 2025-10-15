@@ -179,6 +179,11 @@ function handleError(error) {
   setStatus(message);
 }
 
+function isConfigSaved() {
+  const stored = tableau.extensions.settings.getAll();
+  return Object.keys(stored).length > 0;
+}
+
 function getCurrentSettings() {
   const stored = tableau.extensions.settings.getAll();
   return {
@@ -373,6 +378,14 @@ async function renderChartFromWorksheet() {
     return;
   }
 
+  // Hide chart if config is not saved yet
+  if (!isConfigSaved()) {
+    if (chartContainer) {
+      chartContainer.style.display = 'none';
+    }
+    return;
+  }
+
   try {
     const currentSettings = getCurrentSettings();
     const periodType = currentSettings[SETTINGS_KEYS.period];
@@ -441,7 +454,12 @@ function initializeExtension() {
         outputElement.value = '';
       }
 
-      setStatus('Ready. Configure options and choose "Generate Summary".');
+      // Check if config is saved and update status message
+      if (isConfigSaved()) {
+        setStatus('Ready. Configure options and choose "Generate Summary".');
+      } else {
+        setStatus('Click "Format Extension" to configure settings before use.');
+      }
 
       if (generateButton) {
         generateButton.disabled = false;
