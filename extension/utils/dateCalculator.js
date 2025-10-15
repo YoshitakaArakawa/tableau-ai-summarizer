@@ -186,32 +186,6 @@ export function calculateDateRange(periodType, timezone = 'UTC') {
 }
 
 /**
- * Get period metadata for Tableau API
- * @param {string} periodType - Period type
- * @returns {{useRelativeDate: boolean, periodType?: string, rangeType?: string, rangeN?: number} | null}
- */
-export function getPeriodMetadata(periodType) {
-  const relativeMapping = {
-    // Period to Date - use range filter (calculated dates)
-    wtd: { useRelativeDate: false },
-    mtd: { useRelativeDate: false },
-    qtd: { useRelativeDate: false },
-
-    // Complete Period - use range filter (calculated dates)
-    lastDay: { useRelativeDate: false },
-    lastWeek: { useRelativeDate: false },
-    lastMonth: { useRelativeDate: false },
-
-    // Rolling Window - use relative date API
-    rolling7: { useRelativeDate: true, periodType: 'Days', rangeType: 'LastN', rangeN: 7 },
-    rolling14: { useRelativeDate: true, periodType: 'Days', rangeType: 'LastN', rangeN: 14 },
-    rolling28: { useRelativeDate: true, periodType: 'Days', rangeType: 'LastN', rangeN: 28 }
-  };
-
-  return relativeMapping[periodType] || null;
-}
-
-/**
  * Split date range into comparison and current periods for chart display
  * @param {string} periodType - Period type
  * @param {string} timezone - Timezone ('UTC' or 'JST')
