@@ -210,3 +210,199 @@ export function getPeriodMetadata(periodType) {
 
   return relativeMapping[periodType] || null;
 }
+
+/**
+ * Split date range into comparison and current periods for chart display
+ * @param {string} periodType - Period type
+ * @param {string} timezone - Timezone ('UTC' or 'JST')
+ * @returns {{
+ *   comparisonRange: {min: Date, max: Date},
+ *   currentRange: {min: Date, max: Date},
+ *   totalDays: number,
+ *   yesterdayIndex: number,
+ *   yesterdayLabel: string
+ * } | null}
+ */
+export function splitComparisonAndCurrentRanges(periodType, timezone = 'UTC') {
+  const yesterday = getYesterday(timezone);
+
+  // Helper function to format date label
+  const formatDateLabel = (date) => {
+    return `${date.getUTCMonth() + 1}/${date.getUTCDate()}`;
+  };
+
+  // Helper function to calculate days between dates
+  const daysBetween = (start, end) => {
+    return Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
+  };
+
+  switch (periodType) {
+    // Period to Date
+    case 'wtd': {
+      const thisWeekStart = getWeekStart(yesterday);
+      const lastWeekStart = new Date(thisWeekStart);
+      lastWeekStart.setUTCDate(thisWeekStart.getUTCDate() - 7);
+      const lastWeekEnd = new Date(thisWeekStart);
+      lastWeekEnd.setUTCDate(thisWeekStart.getUTCDate() - 1);
+
+      const yesterdayDayOfWeek = yesterday.getUTCDay();
+      const yesterdayIndex = yesterdayDayOfWeek === 0 ? 7 : yesterdayDayOfWeek;
+
+      return {
+        comparisonRange: { min: lastWeekStart, max: lastWeekEnd },
+        currentRange: { min: thisWeekStart, max: yesterday },
+        totalDays: 7,
+        yesterdayIndex: yesterdayIndex,
+        yesterdayLabel: formatDateLabel(yesterday)
+      };
+    }
+
+    case 'mtd': {
+      const thisMonthStart = getMonthStart(yesterday);
+      const lastMonthEnd = new Date(thisMonthStart);
+      lastMonthEnd.setUTCDate(thisMonthStart.getUTCDate() - 1);
+      const lastMonthStart = getMonthStart(lastMonthEnd);
+
+      const daysInMonth = new Date(Date.UTC(yesterday.getUTCFullYear(), yesterday.getUTCMonth() + 1, 0)).getUTCDate();
+      const yesterdayIndex = yesterday.getUTCDate();
+
+      return {
+        comparisonRange: { min: lastMonthStart, max: lastMonthEnd },
+        currentRange: { min: thisMonthStart, max: yesterday },
+        totalDays: daysInMonth,
+        yesterdayIndex: yesterdayIndex,
+        yesterdayLabel: formatDateLabel(yesterday)
+      };
+    }
+
+    case 'qtd': {
+      const thisQuarterStart = getQuarterStart(yesterday);
+      const lastQuarterEnd = new Date(thisQuarterStart);
+      lastQuarterEnd.setUTCDate(thisQuarterStart.getUTCDate() - 1);
+      const lastQuarterStart = getQuarterStart(lastQuarterEnd);
+
+      const daysInQuarter = daysBetween(thisQuarterStart, new Date(Date.UTC(
+        thisQuarterStart.getUTCFullYear(),
+        thisQuarterStart.getUTCMonth() + 3,
+        0
+      )));
+      const yesterdayIndex = daysBetween(thisQuarterStart, yesterday);
+
+      return {
+        comparisonRange: { min: lastQuarterStart, max: lastQuarterEnd },
+        currentRange: { min: thisQuarterStart, max: yesterday },
+        totalDays: daysInQuarter,
+        yesterdayIndex: yesterdayIndex,
+        yesterdayLabel: formatDateLabel(yesterday)
+      };
+    }
+
+    // Complete Period
+    case 'lastWeek': {
+      const thisWeekStart = getWeekStart(yesterday);
+      const lastWeekEnd = new Date(thisWeekStart);
+      lastWeekEnd.setUTCDate(thisWeekStart.getUTCDate() - 1);
+      const lastWeekStart = new Date(lastWeekEnd);
+      lastWeekStart.setUTCDate(lastWeekEnd.getUTCDate() - 6);
+
+      const twoWeeksAgoEnd = new Date(lastWeekStart);
+      twoWeeksAgoEnd.setUTCDate(lastWeekStart.getUTCDate() - 1);
+      const twoWeeksAgoStart = new Date(twoWeeksAgoEnd);
+      twoWeeksAgoStart.setUTCDate(twoWeeksAgoEnd.getUTCDate() - 6);
+
+      return {
+        comparisonRange: { min: twoWeeksAgoStart, max: twoWeeksAgoEnd },
+        currentRange: { min: lastWeekStart, max: lastWeekEnd },
+        totalDays: 7,
+        yesterdayIndex: 7,
+        yesterdayLabel: formatDateLabel(lastWeekEnd)
+      };
+    }
+
+    case 'lastMonth': {
+      const thisMonthStart = getMonthStart(yesterday);
+      const lastMonthEnd = new Date(thisMonthStart);
+      lastMonthEnd.setUTCDate(thisMonthStart.getUTCDate() - 1);
+      const lastMonthStart = getMonthStart(lastMonthEnd);
+
+      const twoMonthsAgoEnd = new Date(lastMonthStart);
+      twoMonthsAgoEnd.setUTCDate(lastMonthStart.getUTCDate() - 1);
+      const twoMonthsAgoStart = getMonthStart(twoMonthsAgoEnd);
+
+      const daysInLastMonth = daysBetween(lastMonthStart, lastMonthEnd);
+
+      return {
+        comparisonRange: { min: twoMonthsAgoStart, max: twoMonthsAgoEnd },
+        currentRange: { min: lastMonthStart, max: lastMonthEnd },
+        totalDays: daysInLastMonth,
+        yesterdayIndex: daysInLastMonth,
+        yesterdayLabel: formatDateLabel(lastMonthEnd)
+      };
+    }
+
+    // Rolling Window
+    case 'rolling7': {
+      const currentEnd = yesterday;
+      const currentStart = new Date(yesterday);
+      currentStart.setUTCDate(yesterday.getUTCDate() - 6);
+
+      const comparisonEnd = new Date(currentStart);
+      comparisonEnd.setUTCDate(currentStart.getUTCDate() - 1);
+      const comparisonStart = new Date(comparisonEnd);
+      comparisonStart.setUTCDate(comparisonEnd.getUTCDate() - 6);
+
+      return {
+        comparisonRange: { min: comparisonStart, max: comparisonEnd },
+        currentRange: { min: currentStart, max: currentEnd },
+        totalDays: 7,
+        yesterdayIndex: 7,
+        yesterdayLabel: formatDateLabel(yesterday)
+      };
+    }
+
+    case 'rolling14': {
+      const currentEnd = yesterday;
+      const currentStart = new Date(yesterday);
+      currentStart.setUTCDate(yesterday.getUTCDate() - 13);
+
+      const comparisonEnd = new Date(currentStart);
+      comparisonEnd.setUTCDate(currentStart.getUTCDate() - 1);
+      const comparisonStart = new Date(comparisonEnd);
+      comparisonStart.setUTCDate(comparisonEnd.getUTCDate() - 13);
+
+      return {
+        comparisonRange: { min: comparisonStart, max: comparisonEnd },
+        currentRange: { min: currentStart, max: currentEnd },
+        totalDays: 14,
+        yesterdayIndex: 14,
+        yesterdayLabel: formatDateLabel(yesterday)
+      };
+    }
+
+    case 'rolling28': {
+      const currentEnd = yesterday;
+      const currentStart = new Date(yesterday);
+      currentStart.setUTCDate(yesterday.getUTCDate() - 27);
+
+      const comparisonEnd = new Date(currentStart);
+      comparisonEnd.setUTCDate(currentStart.getUTCDate() - 1);
+      const comparisonStart = new Date(comparisonEnd);
+      comparisonStart.setUTCDate(comparisonEnd.getUTCDate() - 27);
+
+      return {
+        comparisonRange: { min: comparisonStart, max: comparisonEnd },
+        currentRange: { min: currentStart, max: currentEnd },
+        totalDays: 28,
+        yesterdayIndex: 28,
+        yesterdayLabel: formatDateLabel(yesterday)
+      };
+    }
+
+    // lastDay is not supported for comparison chart
+    case 'lastDay':
+      return null;
+
+    default:
+      return null;
+  }
+}

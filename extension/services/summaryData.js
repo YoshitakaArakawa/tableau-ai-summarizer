@@ -1,4 +1,5 @@
 import { dataTableToCsv } from '../helpers/csv.js';
+import { splitComparisonAndCurrentRanges } from '../utils/dateCalculator.js';
 
 function canonicalizeName(value) {
   if (value === null || value === undefined) {
@@ -189,7 +190,7 @@ function analyseSummaryColumns(columns = [], expectedEncodings = {}) {
   };
 }
 
-export function fetchSummaryDataCsv(worksheet, expectedEncodings = {}) {
+export function fetchSummaryDataCsv(worksheet, expectedEncodings = {}, periodType = null, timezone = 'UTC') {
   if (!worksheet) {
     return Promise.reject(new Error('Worksheet context unavailable.'));
   }
@@ -203,15 +204,20 @@ export function fetchSummaryDataCsv(worksheet, expectedEncodings = {}) {
 
       const summaryMetadata = analyseSummaryColumns(dataTable.columns || [], expectedEncodings);
       const csvText = dataTableToCsv(dataTable);
-      const chartData = extractChartData(dataTable, summaryMetadata);
+      const chartData = extractChartData(dataTable, summaryMetadata, periodType, timezone);
 
       return { csvText, summaryMetadata, chartData };
     });
 }
 
-function extractChartData(dataTable, summaryMetadata) {
+function extractChartData(dataTable, summaryMetadata, periodType, timezone) {
+  // Return null for unsupported period types
+  if (!periodType || periodType === 'lastDay') {
+    return null;
+  }
+
   if (!dataTable || !dataTable.data || !dataTable.columns) {
-    return [];
+    return null;
   }
 
   const measureName = summaryMetadata?.measure?.fieldName || summaryMetadata?.measure?.displayName || '';
@@ -228,9 +234,29 @@ function extractChartData(dataTable, summaryMetadata) {
   });
 
   if (measureColIndex === -1 || dateColIndex === -1) {
-    return [];
+    return null;
   }
 
+  // Get period ranges
+  const periodRanges = splitComparisonAndCurrentRanges(periodType, timezone);
+  if (!periodRanges) {
+    return null;
+  }
+
+  const { comparisonRange, currentRange, totalDays, yesterdayIndex, yesterdayLabel } = periodRanges;
+
+  // Helper function to calculate day index from date and range start
+  const calculateDayIndex = (date, rangeStart) => {
+    const daysDiff = Math.floor((date - rangeStart) / (1000 * 60 * 60 * 24));
+    return daysDiff + 1; // 1-indexed
+  };
+
+  // Helper function to format date label
+  const formatDateLabel = (date) => {
+    return `${date.getUTCMonth() + 1}/${date.getUTCDate()}`;
+  };
+
+  // Aggregate data by date
   const aggregationMap = new Map();
 
   dataTable.data.forEach(row => {
@@ -238,32 +264,70 @@ function extractChartData(dataTable, summaryMetadata) {
     const formattedDate = row[dateColIndex]?.formattedValue || rawDate || '';
     const measureValue = parseFloat(row[measureColIndex]?.value) || 0;
 
-    const dateKey = String(rawDate || formattedDate);
+    if (!rawDate) return;
+
+    const date = new Date(rawDate);
+    if (isNaN(date.getTime())) return;
+
+    // Normalize to UTC date only (ignore time)
+    const normalizedDate = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+    const dateKey = normalizedDate.getTime();
 
     if (aggregationMap.has(dateKey)) {
       const existing = aggregationMap.get(dateKey);
       existing.value += measureValue;
     } else {
       aggregationMap.set(dateKey, {
-        rawDate: rawDate,
-        label: formattedDate,
+        date: normalizedDate,
+        formattedDate: formattedDate,
         value: measureValue
       });
     }
   });
 
-  const chartData = Array.from(aggregationMap.values());
+  // Split into comparison and current period arrays
+  const comparisonData = [];
+  const currentData = [];
 
-  chartData.sort((a, b) => {
-    const dateA = new Date(a.rawDate);
-    const dateB = new Date(b.rawDate);
+  aggregationMap.forEach((item) => {
+    const itemDate = item.date;
+    const itemTime = itemDate.getTime();
 
-    if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) {
-      return 0;
+    // Check if in comparison range
+    if (itemTime >= comparisonRange.min.getTime() && itemTime <= comparisonRange.max.getTime()) {
+      const dayIndex = calculateDayIndex(itemDate, comparisonRange.min);
+      comparisonData.push({
+        dayIndex: dayIndex,
+        value: item.value,
+        date: formatDateLabel(itemDate),
+        rawDate: itemDate
+      });
     }
 
-    return dateA - dateB;
+    // Check if in current range
+    if (itemTime >= currentRange.min.getTime() && itemTime <= currentRange.max.getTime()) {
+      const dayIndex = calculateDayIndex(itemDate, currentRange.min);
+      currentData.push({
+        dayIndex: dayIndex,
+        value: item.value,
+        date: formatDateLabel(itemDate),
+        rawDate: itemDate
+      });
+    }
   });
 
-  return chartData;
+  // Sort by day index
+  comparisonData.sort((a, b) => a.dayIndex - b.dayIndex);
+  currentData.sort((a, b) => a.dayIndex - b.dayIndex);
+
+  return {
+    comparison: comparisonData,
+    current: currentData,
+    metadata: {
+      totalDays: totalDays,
+      yesterdayIndex: yesterdayIndex,
+      yesterdayLabel: yesterdayLabel,
+      periodType: periodType
+    }
+  };
 }

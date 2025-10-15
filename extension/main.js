@@ -242,7 +242,7 @@ function triggerSummaryGeneration(reason = 'manual') {
       }
 
       setStatus('Fetching summary data...');
-      return fetchSummaryDataCsv(worksheet, encodingAssignments).then(({ csvText, summaryMetadata, chartData }) => ({
+      return fetchSummaryDataCsv(worksheet, encodingAssignments, periodType, timezone).then(({ csvText, summaryMetadata, chartData }) => ({
         csvText,
         settingsSnapshot,
         summaryMetadata,
@@ -374,11 +374,23 @@ async function renderChartFromWorksheet() {
   }
 
   try {
-    const encodingAssignments = await getRequiredEncodingAssignments(worksheet);
-    const { chartData, summaryMetadata } = await fetchSummaryDataCsv(worksheet, encodingAssignments);
+    const currentSettings = getCurrentSettings();
+    const periodType = currentSettings[SETTINGS_KEYS.period];
+    const timezone = currentSettings[SETTINGS_KEYS.timezone] || 'UTC';
 
-    if (chartData && chartData.length > 0) {
-      const currentSettings = getCurrentSettings();
+    // Hide chart for Last Day period type
+    if (periodType === 'lastDay') {
+      if (chartContainer) {
+        chartContainer.style.display = 'none';
+      }
+      setStatus('Chart not available for Last Day period.');
+      return;
+    }
+
+    const encodingAssignments = await getRequiredEncodingAssignments(worksheet);
+    const { chartData, summaryMetadata } = await fetchSummaryDataCsv(worksheet, encodingAssignments, periodType, timezone);
+
+    if (chartData && (chartData.comparison?.length > 0 || chartData.current?.length > 0)) {
       const isCumulative = currentSettings[SETTINGS_KEYS.cumulative] === 'true';
       const measureName = formatFieldLabel(summaryMetadata.measure) || formatFieldLabel(encodingAssignments.measure) || 'Value';
 

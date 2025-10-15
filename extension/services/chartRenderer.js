@@ -1,11 +1,22 @@
 let activeCanvas = null;
-let activePoints = [];
-let activeData = [];
+let activeComparisonPoints = [];
+let activeCurrentPoints = [];
+let activeChartData = null;
 let activeOptions = {};
 let tooltipElement = null;
 
-export function renderChart(canvas, data, options = {}) {
-  if (!canvas || !data || data.length === 0) {
+export function renderChart(canvas, chartData, options = {}) {
+  // Validate input
+  if (!canvas || !chartData) {
+    return;
+  }
+
+  // Check if data structure is valid
+  if (!chartData.comparison && !chartData.current) {
+    return;
+  }
+
+  if (!chartData.metadata) {
     return;
   }
 
@@ -14,14 +25,14 @@ export function renderChart(canvas, data, options = {}) {
 
   const width = canvas.width;
   const height = canvas.height;
-  const padding = { top: 20, right: 40, bottom: 30, left: 50 };
+  const padding = { top: 20, right: 100, bottom: 30, left: 100 };
   const chartWidth = width - padding.left - padding.right;
   const chartHeight = height - padding.top - padding.bottom;
 
   ctx.clearRect(0, 0, width, height);
 
   activeCanvas = canvas;
-  activeData = data;
+  activeChartData = chartData;
   activeOptions = options;
 
   if (!canvas.dataset.listenerAttached) {
@@ -30,97 +41,157 @@ export function renderChart(canvas, data, options = {}) {
     canvas.dataset.listenerAttached = 'true';
   }
 
-  const values = data.map(d => parseFloat(d.value) || 0);
-  const labels = data.map(d => d.label || '');
+  const { comparison, current, metadata } = chartData;
+  const { totalDays, yesterdayIndex, yesterdayLabel } = metadata;
 
-  let plotValues = values;
-  if (isCumulative) {
-    plotValues = [];
-    let sum = 0;
-    for (const val of values) {
-      sum += val;
-      plotValues.push(sum);
+  // Prepare data for plotting
+  const prepareValues = (dataArray) => {
+    if (!dataArray || dataArray.length === 0) return [];
+
+    if (isCumulative) {
+      const cumulative = [];
+      let sum = 0;
+      for (const item of dataArray) {
+        sum += item.value;
+        cumulative.push({ ...item, value: sum, originalValue: item.value });
+      }
+      return cumulative;
     }
+    return dataArray.map(item => ({ ...item, originalValue: item.value }));
+  };
+
+  const comparisonValues = prepareValues(comparison);
+  const currentValues = prepareValues(current);
+
+  // Calculate value range for Y-axis
+  const allValues = [...comparisonValues, ...currentValues].map(d => d.value);
+  if (allValues.length === 0) {
+    return;
   }
 
-  const minValue = Math.min(...plotValues);
-  const maxValue = Math.max(...plotValues);
+  const minValue = Math.min(...allValues);
+  const maxValue = Math.max(...allValues);
   const valueRange = maxValue - minValue || 1;
 
-  const points = plotValues.map((val, idx) => {
-    const x = padding.left + (chartWidth / (plotValues.length - 1 || 1)) * idx;
-    const y = padding.top + chartHeight - ((val - minValue) / valueRange) * chartHeight;
-    return {
-      x,
-      y,
-      label: labels[idx],
-      value: plotValues[idx],
-      originalValue: values[idx]
-    };
-  });
+  // Helper function to convert day index to X position
+  const dayIndexToX = (dayIndex) => {
+    return padding.left + (chartWidth / (totalDays - 1 || 1)) * (dayIndex - 1);
+  };
 
-  activePoints = points;
+  // Helper function to convert value to Y position
+  const valueToY = (value) => {
+    return padding.top + chartHeight - ((value - minValue) / valueRange) * chartHeight;
+  };
 
+  // Convert data to points
+  const comparisonPoints = comparisonValues.map(item => ({
+    x: dayIndexToX(item.dayIndex),
+    y: valueToY(item.value),
+    dayIndex: item.dayIndex,
+    date: item.date,
+    value: item.value,
+    originalValue: item.originalValue,
+    period: 'comparison'
+  }));
+
+  const currentPoints = currentValues.map(item => ({
+    x: dayIndexToX(item.dayIndex),
+    y: valueToY(item.value),
+    dayIndex: item.dayIndex,
+    date: item.date,
+    value: item.value,
+    originalValue: item.originalValue,
+    period: 'current'
+  }));
+
+  activeComparisonPoints = comparisonPoints;
+  activeCurrentPoints = currentPoints;
+
+  // Draw background
   ctx.fillStyle = '#f7f7f7';
   ctx.fillRect(padding.left, padding.top, chartWidth, chartHeight);
 
+  // Draw reference lines
+  // 1. First day reference line (light, no label)
+  const firstDayX = dayIndexToX(1);
   ctx.strokeStyle = '#e0e0e0';
   ctx.lineWidth = 1;
-  for (let i = 0; i <= 5; i++) {
-    const yPos = padding.top + (chartHeight / 5) * i;
-    ctx.beginPath();
-    ctx.moveTo(padding.left, yPos);
-    ctx.lineTo(padding.left + chartWidth, yPos);
-    ctx.stroke();
-  }
-
-  ctx.strokeStyle = '#cccccc';
-  ctx.strokeRect(padding.left, padding.top, chartWidth, chartHeight);
-
-  ctx.fillStyle = '#666666';
-  ctx.font = '11px sans-serif';
-  ctx.textAlign = 'right';
-  ctx.textBaseline = 'middle';
-  for (let i = 0; i <= 5; i++) {
-    const val = minValue + (valueRange / 5) * (5 - i);
-    const yPos = padding.top + (chartHeight / 5) * i;
-    ctx.fillText(formatNumber(val), padding.left - 8, yPos);
-  }
-
-  if (labels.length > 0) {
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    const labelStep = Math.ceil(labels.length / 6);
-    labels.forEach((label, idx) => {
-      if (idx % labelStep === 0 || idx === labels.length - 1) {
-        const xPos = padding.left + (chartWidth / (labels.length - 1 || 1)) * idx;
-        ctx.fillText(truncateLabel(label), xPos, padding.top + chartHeight + 6);
-      }
-    });
-  }
-
-  ctx.strokeStyle = isCumulative ? '#4A90E2' : '#1f77b4';
-  ctx.lineWidth = isCumulative ? 2.5 : 2;
-  ctx.lineJoin = 'round';
-  ctx.lineCap = 'round';
-
   ctx.beginPath();
-  points.forEach((point, idx) => {
-    if (idx === 0) {
-      ctx.moveTo(point.x, point.y);
-    } else {
-      ctx.lineTo(point.x, point.y);
-    }
-  });
+  ctx.moveTo(firstDayX, padding.top);
+  ctx.lineTo(firstDayX, padding.top + chartHeight);
   ctx.stroke();
 
-  if (isCumulative) {
-    ctx.fillStyle = '#4A90E2';
-    points.forEach(point => {
-      ctx.beginPath();
-      ctx.arc(point.x, point.y, 3.5, 0, 2 * Math.PI);
-      ctx.fill();
+  // 2. Last day reference line (light, no label)
+  const lastDayX = dayIndexToX(totalDays);
+  ctx.strokeStyle = '#e0e0e0';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(lastDayX, padding.top);
+  ctx.lineTo(lastDayX, padding.top + chartHeight);
+  ctx.stroke();
+
+  // 3. Yesterday reference line (darker, with label)
+  const yesterdayX = dayIndexToX(yesterdayIndex);
+  ctx.strokeStyle = '#999999';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(yesterdayX, padding.top);
+  ctx.lineTo(yesterdayX, padding.top + chartHeight);
+  ctx.stroke();
+
+  // Draw yesterday label
+  ctx.fillStyle = '#666666';
+  ctx.font = 'bold 11px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText(yesterdayLabel, yesterdayX, padding.top + chartHeight + 6);
+
+  // Draw comparison period line (gray, dashed)
+  if (comparisonPoints.length > 0) {
+    ctx.strokeStyle = '#999999';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]);
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+
+    ctx.beginPath();
+    comparisonPoints.forEach((point, idx) => {
+      if (idx === 0) {
+        ctx.moveTo(point.x, point.y);
+      } else {
+        ctx.lineTo(point.x, point.y);
+      }
     });
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Draw current period line (blue, solid)
+  if (currentPoints.length > 0) {
+    ctx.strokeStyle = isCumulative ? '#4A90E2' : '#1f77b4';
+    ctx.lineWidth = isCumulative ? 2.5 : 2;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+
+    ctx.beginPath();
+    currentPoints.forEach((point, idx) => {
+      if (idx === 0) {
+        ctx.moveTo(point.x, point.y);
+      } else {
+        ctx.lineTo(point.x, point.y);
+      }
+    });
+    ctx.stroke();
+
+    // Draw dots for cumulative mode
+    if (isCumulative) {
+      ctx.fillStyle = '#4A90E2';
+      currentPoints.forEach(point => {
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 3.5, 0, 2 * Math.PI);
+        ctx.fill();
+      });
+    }
   }
 }
 
@@ -142,7 +213,7 @@ function truncateLabel(label, maxLength = 10) {
 }
 
 function handleMouseMove(event) {
-  if (!activeCanvas || !activePoints.length) {
+  if (!activeCanvas || (!activeComparisonPoints.length && !activeCurrentPoints.length)) {
     return;
   }
 
@@ -156,7 +227,17 @@ function handleMouseMove(event) {
   let nearestPoint = null;
   let minDistance = Infinity;
 
-  activePoints.forEach(point => {
+  // Check comparison points
+  activeComparisonPoints.forEach(point => {
+    const distance = Math.sqrt(Math.pow(point.x - mouseX, 2) + Math.pow(point.y - mouseY, 2));
+    if (distance < threshold && distance < minDistance) {
+      minDistance = distance;
+      nearestPoint = point;
+    }
+  });
+
+  // Check current points
+  activeCurrentPoints.forEach(point => {
     const distance = Math.sqrt(Math.pow(point.x - mouseX, 2) + Math.pow(point.y - mouseY, 2));
     if (distance < threshold && distance < minDistance) {
       minDistance = distance;
@@ -191,12 +272,14 @@ function showTooltip(clientX, clientY, point) {
 
   const measureName = activeOptions.measureName || 'Value';
   const isCumulative = activeOptions.cumulative === true;
+  const periodLabel = point.period === 'comparison' ? 'Comparison' : 'Current';
+  const periodColor = point.period === 'comparison' ? '#999999' : '#4A90E2';
 
-  let content = `<div style="font-weight: bold; margin-bottom: 4px;">${point.label}</div>`;
+  let content = `<div style="font-weight: bold; margin-bottom: 4px; color: ${periodColor};">${periodLabel}: ${point.date}</div>`;
   content += `<div>${measureName}: ${formatNumber(point.value)}</div>`;
 
   if (isCumulative && point.originalValue !== undefined) {
-    content += `<div style="font-size: 0.9em; color: #666; margin-top: 2px;">Period: ${formatNumber(point.originalValue)}</div>`;
+    content += `<div style="font-size: 0.9em; color: #ccc; margin-top: 2px;">Period: ${formatNumber(point.originalValue)}</div>`;
   }
 
   tooltipElement.innerHTML = content;

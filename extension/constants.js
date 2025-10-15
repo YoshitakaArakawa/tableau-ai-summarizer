@@ -7,7 +7,7 @@ export const SETTINGS_KEYS = {
 };
 
 export const DEFAULT_SETTINGS = {
-  [SETTINGS_KEYS.period]: 'wtd',
+  [SETTINGS_KEYS.period]: 'rolling28',
   [SETTINGS_KEYS.trend]: 'neutral',
   [SETTINGS_KEYS.language]: 'en',
   [SETTINGS_KEYS.cumulative]: 'false',
