@@ -1,4 +1,8 @@
+.github
 .env
+.dockerignore
+Dockerfile
+fly.toml
 *.trex
 docs/
 AGENTS.md

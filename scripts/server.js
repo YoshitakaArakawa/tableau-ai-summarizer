@@ -11,7 +11,7 @@ dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 const app = express();
 const rootDirectory = path.resolve(__dirname, '..');
 const extensionDirectory = path.resolve(rootDirectory, 'extension');
-const port = Number(process.env.EXTENSION_PORT) || 8787;
+const port = Number(process.env.PORT || process.env.EXTENSION_PORT) || 8787;
 
 const runtimeConfig = getRuntimeConfig(process.env);
 const loggingConfig = getLoggingConfig(process.env, rootDirectory);
